@@ -1,0 +1,1483 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCM Materiais de Construção - Loja, Vendedores & Painel de Gestão</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- QRCode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableReceipt, #printableReceipt * { visibility: visible; }
+            #printableReceipt { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+        @keyframes toastIn {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-toast { animation: toastIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col relative">
+
+    <div class="bg-slate-900 text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+            <div class="flex items-center gap-4 flex-wrap justify-center">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-building text-orange-400"></i> <strong>CNPJ:</strong> 32.072.531/0001-86</span>
+                <span class="hidden md:inline">|</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-truck text-amber-400"></i> Entregas Rápidas na Região Metropolitana</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://wa.me/558133393980" target="_blank" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+                    <i class="fa-brands fa-whatsapp text-emerald-400"></i> (81) 3339-3980
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('store')">
+                <div class="w-11 h-11 bg-gradient-to-tr from-orange-600 to-amber-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-orange-500/30">
+                    MCM
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-slate-900 text-lg leading-tight tracking-tight">MCM Materiais</h1>
+                    <p class="text-[11px] text-orange-600 font-semibold tracking-wide">Construção em Geral</p>
+                </div>
+            </div>
+
+            <!-- Global View Switcher -->
+            <div class="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center gap-1 shadow-inner overflow-x-auto custom-scrollbar">
+                <button id="btn-mode-store" onclick="switchView('store')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-slate-800 shadow-sm whitespace-nowrap">
+                    <i class="fa-solid fa-store text-orange-600"></i>
+                    <span>Loja Virtual</span>
+                </button>
+                <button id="btn-mode-seller" onclick="switchView('seller')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-800 whitespace-nowrap">
+                    <i class="fa-solid fa-user-tie text-blue-600"></i>
+                    <span>Painel do Vendedor</span>
+                    <span class="bg-blue-600 text-white text-[9px] px-1.5 py-0.2 rounded font-mono">CRM</span>
+                </button>
+                <button id="btn-mode-admin" onclick="switchView('admin')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-800 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie text-slate-600"></i>
+                    <span>Caixa & Gestão</span>
+                </button>
+            </div>
+
+            <!-- Customer Cart Button -->
+            <div id="store-cart-button-container" class="flex items-center gap-2">
+                <button onclick="toggleCartDrawer()" class="relative bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold px-3.5 py-2 rounded-xl border border-orange-200 transition-colors flex items-center gap-2 text-xs sm:text-sm">
+                    <i class="fa-solid fa-cart-shopping text-base"></i>
+                    <span class="hidden md:inline">Carrinho</span>
+                    <span id="cart-badge" class="bg-orange-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="view-store" class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-8">
+        
+        <!-- Hero Store Banner -->
+        <div class="relative bg-gradient-to-r from-slate-900 via-slate-800 to-orange-950 rounded-2xl p-6 sm:p-10 text-white overflow-hidden shadow-xl border border-slate-800">
+            <div class="relative z-10 max-w-2xl space-y-4">
+                <span class="bg-orange-500/20 text-orange-400 border border-orange-500/30 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block">
+                    CNPJ: 32.072.531/0001-86 • Atendimento Rápido
+                </span>
+                <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                    Tudo para sua Obra do Básico ao Acabamento
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Cimento, Tijolos, Areia, Tubos Hidráulicos, Fiação Elétrica e Tintas com entrega garantida e melhor preço no PIX.
+                </p>
+                <div class="pt-2 flex flex-wrap gap-3">
+                    <a href="#store-catalog" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-orange-600/30 text-xs sm:text-sm flex items-center gap-2 transition-all">
+                        <i class="fa-solid fa-boxes-stacked"></i> Ver Catálogo Completo
+                    </a>
+                    <a href="https://wa.me/558133393980?text=Olá,%20gostaria%20de%20fazer%20um%20orçamento%20de%20materiais!" target="_blank" class="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 transition-colors">
+                        <i class="fa-brands fa-whatsapp text-emerald-400"></i> Orçamento Instantâneo
+                    </a>
+                </div>
+            </div>
+            <!-- Decorative Accent -->
+            <div class="absolute -right-12 -bottom-12 opacity-15 pointer-events-none text-orange-500 text-[200px]">
+                <i class="fa-solid fa-trowel-bricks"></i>
+            </div>
+        </div>
+
+        <!-- Store Category Badges & Search Bar -->
+        <div id="store-catalog" class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+                <!-- Search -->
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                    <input type="text" id="store-search-input" oninput="filterStoreProducts()" placeholder="O que você precisa para sua obra hoje? Ex: Cimento, Areia, Tubo..." class="w-full text-xs sm:text-sm pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none">
+                </div>
+
+                <!-- Category Pills -->
+                <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+                    <button onclick="filterStoreCategory('Todos')" class="cat-pill bg-slate-900 text-white text-xs font-bold px-3.5 py-2 rounded-lg whitespace-nowrap shadow-sm">Todos</button>
+                    <button onclick="filterStoreCategory('Básico')" class="cat-pill bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors">Básico</button>
+                    <button onclick="filterStoreCategory('Hidráulica')" class="cat-pill bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors">Hidráulica</button>
+                    <button onclick="filterStoreCategory('Elétrica')" class="cat-pill bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors">Elétrica</button>
+                    <button onclick="filterStoreCategory('Tintas')" class="cat-pill bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors">Tintas</button>
+                    <button onclick="filterStoreCategory('Cobertura')" class="cat-pill bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors">Cobertura</button>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="store-products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                <!-- Dynamic Products Rendered via JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <div id="cart-drawer" class="fixed inset-0 z-50 overflow-hidden hidden">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="toggleCartDrawer()"></div>
+
+        <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between">
+                <!-- Drawer Header -->
+                <div class="p-5 bg-slate-900 text-white flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-cart-flatbed text-orange-400 text-xl"></i>
+                        <div>
+                            <h3 class="font-bold text-base">Seu Carrinho de Materiais</h3>
+                            <p class="text-[11px] text-slate-400">MCM Materiais de Construção</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleCartDrawer()" class="text-slate-400 hover:text-white text-lg p-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Cart Items List -->
+                <div id="cart-drawer-items" class="p-5 flex-1 overflow-y-auto custom-scrollbar space-y-3 divide-y divide-slate-100">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Drawer Footer & Checkout -->
+                <div class="p-5 border-t border-slate-200 bg-slate-50 space-y-4">
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex justify-between text-slate-600">
+                            <span>Subtotal Produtos:</span>
+                            <span id="drawer-subtotal" class="font-semibold">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Taxa de Entrega Estimada:</span>
+                            <span id="drawer-freight" class="font-semibold text-emerald-600">R$ 50,00</span>
+                        </div>
+                        <div class="flex justify-between text-slate-900 font-extrabold text-base pt-2 border-t border-slate-200">
+                            <span>TOTAL DO PEDIDO:</span>
+                            <span id="drawer-total" class="text-orange-600">R$ 50,00</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <button onclick="checkoutToPIX()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all text-xs sm:text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-qrcode"></i> Pagar Agora via PIX (QR Code)
+                        </button>
+                        <button onclick="checkoutToWhatsApp()" class="w-full bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold py-2.5 px-4 rounded-xl transition-colors text-xs flex items-center justify-center gap-2">
+                            <i class="fa-brands fa-whatsapp text-lg"></i> Enviar Pedido no WhatsApp da Loja
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-seller" class="flex-1 hidden max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        
+        <!-- Sales Rep Profile Switcher Header -->
+        <div class="bg-gradient-to-r from-blue-900 via-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-lg border border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 bg-gradient-to-tr from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 id="seller-name-display" class="text-xl font-extrabold tracking-tight">Carlos Silva</h2>
+                        <span class="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-[10px] font-bold px-2 py-0.5 rounded">Vendedor Balcão / WhatsApp</span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-0.5">MCM Materiais de Construção • CNPJ: 32.072.531/0001-86</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 bg-white/10 p-2 rounded-xl border border-white/10 backdrop-blur-sm">
+                <span class="text-xs font-semibold text-slate-300 pl-2">Selecionar Vendedor:</span>
+                <select id="seller-select" onchange="changeActiveSeller()" class="bg-slate-900 text-white font-bold text-xs rounded-lg px-3 py-2 border border-slate-700 outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="S01">Carlos Silva (#01)</option>
+                    <option value="S02">Mariana Souza (#02)</option>
+                    <option value="S03">Roberto Costa (#03)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Vendedor Performance Stats Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Vendas Hoje</span>
+                    <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                    </span>
+                </div>
+                <p id="seller-kpi-today" class="text-2xl font-bold text-slate-800 mt-2">R$ 4.820,00</p>
+                <p class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> 6 Vendas Concluídas</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Meta do Mês</span>
+                    <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </span>
+                </div>
+                <p id="seller-kpi-goal" class="text-2xl font-bold text-slate-800 mt-2">78% Atingida</p>
+                <div class="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+                    <div id="seller-goal-bar" class="bg-blue-600 h-full rounded-full" style="width: 78%;"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Comissão Acumulada</span>
+                    <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-coins"></i>
+                    </span>
+                </div>
+                <p id="seller-kpi-commission" class="text-2xl font-bold text-amber-600 mt-2">R$ 875,50</p>
+                <p class="text-xs text-slate-500 font-medium mt-1">Taxa: 2.5% sobre vendas</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Orçamentos Abertos</span>
+                    <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </span>
+                </div>
+                <p id="seller-kpi-open-quotes" class="text-2xl font-bold text-indigo-700 mt-2">4 Pedidos</p>
+                <p class="text-xs text-indigo-600 font-medium mt-1">R$ 5.340,00 a confirmar</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Quick Seller Quote Generator -->
+            <div class="lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-blue-600"></i>
+                        Novo Orçamento / Venda do Vendedor
+                    </h3>
+                    <span class="text-xs bg-slate-100 text-slate-600 font-bold px-2.5 py-1 rounded-lg">Emissão Balcão</span>
+                </div>
+
+                <!-- Client Info Inputs -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nome do Cliente *</label>
+                        <input type="text" id="sq-customer-name" placeholder="Ex: Mestre de Obra Roberto" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp / Telefone *</label>
+                        <input type="tel" id="sq-customer-phone" placeholder="(81) 98888-0000" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Desconto Autorizado (%)</label>
+                        <select id="sq-discount-perc" onchange="calculateSqTotal()" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800">
+                            <option value="0">0% (Preço Normal)</option>
+                            <option value="3">3% Desconto à Vista</option>
+                            <option value="5">5% Desconto Máximo Balcão</option>
+                            <option value="8">8% Especial Construtor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Product Selector Table for Seller -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-700">Adicionar Produtos ao Orçamento:</label>
+                    <div class="flex gap-2">
+                        <select id="sq-product-select" class="flex-1 text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <input type="number" id="sq-product-qty" value="1" min="1" class="w-20 text-xs font-bold text-center border border-slate-300 rounded-lg outline-none">
+                        <button onclick="addSqItem()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Added Items List -->
+                <div class="border border-slate-200 rounded-xl overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-2.5">Item</th>
+                                <th class="p-2.5">Qtd</th>
+                                <th class="p-2.5">Preço Un.</th>
+                                <th class="p-2.5 text-right">Total</th>
+                                <th class="p-2.5 text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sq-items-tbody" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="5" class="p-4 text-center text-slate-400">Nenhum item adicionado ao orçamento.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Total & Action Buttons -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <span class="text-[11px] text-slate-500 uppercase font-bold block">Valor Total do Orçamento</span>
+                        <span id="sq-total-display" class="text-2xl font-black text-blue-700">R$ 0,00</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <button onclick="saveSqQuote('orçamento')" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Salvar Rascunho
+                        </button>
+                        <button onclick="saveSqQuote('pix')" class="flex-1 sm:flex-none bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-qrcode"></i> Enviar PIX pro Cliente
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Seller Ranking Leaderboard -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="font-extrabold text-slate-800 text-sm border-b border-slate-100 pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-500"></i>
+                        Ranking Semanal de Vendedores
+                    </h3>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs flex items-center justify-center shadow">1º</span>
+                                <div>
+                                    <p class="font-bold text-slate-800">Mariana Souza</p>
+                                    <p class="text-[10px] text-slate-500">28 Vendas nesta semana</p>
+                                </div>
+                            </div>
+                            <span class="font-extrabold text-amber-800">R$ 38.450</span>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-full bg-slate-300 text-slate-700 font-black text-xs flex items-center justify-center">2º</span>
+                                <div>
+                                    <p class="font-bold text-slate-800">Carlos Silva (Você)</p>
+                                    <p class="text-[10px] text-slate-500">22 Vendas nesta semana</p>
+                                </div>
+                            </div>
+                            <span class="font-extrabold text-slate-800">R$ 31.200</span>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-full bg-orange-200 text-orange-800 font-black text-xs flex items-center justify-center">3º</span>
+                                <div>
+                                    <p class="font-bold text-slate-800">Roberto Costa</p>
+                                    <p class="text-[10px] text-slate-500">15 Vendas nesta semana</p>
+                                </div>
+                            </div>
+                            <span class="font-extrabold text-slate-800">R$ 19.800</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instant Stock & Price Search Widget -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <h3 class="font-extrabold text-slate-800 text-xs uppercase tracking-wide flex items-center justify-between">
+                        <span><i class="fa-solid fa-magnifying-glass text-blue-600"></i> Consulta Rápida de Estoque</span>
+                        <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">Ao Vivo</span>
+                    </h3>
+                    <input type="text" id="seller-stock-search" oninput="filterSellerStock()" placeholder="Digite nome ou código do material..." class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    <div id="seller-stock-results" class="max-h-48 overflow-y-auto custom-scrollbar space-y-2 pt-1">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Saved Quotes Pipeline (Gestão de Follow-up com Clientes) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-headset text-blue-600"></i>
+                        Meus Orçamentos Emitidos & Retorno do Cliente
+                    </h3>
+                    <p class="text-xs text-slate-500">Acompanhe e envie cobrança via WhatsApp para fechar mais vendas</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                            <th class="py-2.5 px-3">Cód.</th>
+                            <th class="py-2.5 px-3">Cliente</th>
+                            <th class="py-2.5 px-3">Telefone</th>
+                            <th class="py-2.5 px-3">Itens</th>
+                            <th class="py-2.5 px-3">Valor Total</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3 text-center">Cobrar / Fechar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="seller-quotes-tbody" class="divide-y divide-slate-100">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="view-admin" class="flex-1 hidden max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        
+        <!-- Admin Navigation Header -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h2 id="page-title" class="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-orange-600"></i> Painel Geral & Gestão de Caixas
+                </h2>
+                <p class="text-xs text-slate-500">MCM Materiais de Construção - CNPJ: 32.072.531/0001-86</p>
+            </div>
+
+            <!-- Admin Nav Tabs -->
+            <div class="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+                <button onclick="switchAdminTab('dashboard')" id="nav-admin-dashboard" class="admin-tab-btn bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">
+                    Visão Geral
+                </button>
+                <button onclick="switchAdminTab('payment-generator')" id="nav-admin-payment-generator" class="admin-tab-btn text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    Gerador Pagamento
+                </button>
+                <button onclick="switchAdminTab('pos')" id="nav-admin-pos" class="admin-tab-btn text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    PDV Balcão
+                </button>
+                <button onclick="switchAdminTab('inventory')" id="nav-admin-inventory" class="admin-tab-btn text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    Estoque
+                </button>
+                <button onclick="switchAdminTab('transactions')" id="nav-admin-transactions" class="admin-tab-btn text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    Histórico
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 1: DASHBOARD OVERVIEW -->
+        <section id="tab-admin-dashboard" class="admin-content space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase">Vendas Hoje</span>
+                        <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-arrow-trend-up"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2">R$ 14.850,00</p>
+                    <p class="text-xs text-emerald-600 font-medium mt-1">+18.4% vs ontem</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase">Cobranças PIX Ativas</span>
+                        <span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-qrcode"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2">32 Pendentes</p>
+                    <p class="text-xs text-amber-600 font-medium mt-1">R$ 8.420,00 aguardando</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase">Ticket Médio</span>
+                        <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-receipt"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2">R$ 645,65</p>
+                    <p class="text-xs text-slate-500 font-medium mt-1">23 pedidos finalizados</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase">Alertas de Estoque</span>
+                        <span class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </span>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2">2 Itens</p>
+                    <p class="text-xs text-rose-600 font-medium mt-1">Cano 100mm e Cabo 2.5mm</p>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 text-sm mb-4">Faturamento Semanal (PIX vs Cartão)</h3>
+                    <div class="h-64">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm mb-2">Vendas por Categoria</h3>
+                        <div class="h-52 relative flex items-center justify-center">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="text-xs space-y-1.5 pt-2 border-t border-slate-100">
+                        <div class="flex justify-between"><span>Básico & Alvenaria</span><span class="font-bold">42%</span></div>
+                        <div class="flex justify-between"><span>Hidráulica & Elétrica</span><span class="font-bold">28%</span></div>
+                        <div class="flex justify-between"><span>Tintas</span><span class="font-bold">30%</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-admin-payment-generator" class="admin-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Payment Generator Form -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-amber-500"></i>
+                        Gerar Cobrança Instantânea
+                    </h3>
+
+                    <form id="payment-generator-form" onsubmit="generatePayment(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nome do Cliente *</label>
+                                <input type="text" id="pg-customer-name" required placeholder="Ex: Construtora Silva / João Santos" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp do Cliente</label>
+                                <input type="tel" id="pg-customer-phone" placeholder="(81) 99999-0000" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Descrição dos Materiais *</label>
+                            <textarea id="pg-description" rows="3" required placeholder="Ex: 20 Sacos Cimento CP II + 3m³ Areia" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Produtos (R$)</label>
+                                <input type="number" step="0.01" id="pg-value" value="450.00" oninput="calculatePGTotal()" class="w-full text-xs font-bold px-2.5 py-1.5 border border-slate-300 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Frete (R$)</label>
+                                <input type="number" step="0.01" id="pg-freight" value="50.00" oninput="calculatePGTotal()" class="w-full text-xs font-bold px-2.5 py-1.5 border border-slate-300 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Desconto (R$)</label>
+                                <input type="number" step="0.01" id="pg-discount" value="0.00" oninput="calculatePGTotal()" class="w-full text-xs font-bold text-rose-600 px-2.5 py-1.5 border border-slate-300 rounded">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between p-3.5 bg-orange-50 rounded-xl border border-orange-200">
+                            <span class="text-xs uppercase font-bold text-orange-800">Total a Cobrar</span>
+                            <span id="pg-total-display" class="text-xl font-extrabold text-orange-700">R$ 500,00</span>
+                        </div>
+
+                        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-xl shadow-md text-xs sm:text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-qrcode"></i> Gerar PIX & Link de Cobrança
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Generated QR Code Result Box -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wide border-b border-slate-100 pb-3 flex items-center justify-between">
+                            <span><i class="fa-solid fa-qrcode text-emerald-600"></i> QR Code PIX Ativo</span>
+                            <span id="payment-status-badge" class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Aguardando</span>
+                        </h3>
+
+                        <div class="mt-4 text-center space-y-3">
+                            <div class="inline-block p-3 bg-white border-2 border-slate-200 rounded-xl shadow-inner">
+                                <div id="qrcode-canvas" class="flex justify-center items-center min-w-[160px] min-h-[160px]"></div>
+                            </div>
+                            
+                            <div class="text-left space-y-1">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase">PIX Copia e Cola Payload</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="pix-copy-paste-input" readonly value="00020126580014BR.GOV.BCB.PIX0136320725310001865204000053039865406500.005802BR5925MCM MATERIAIS CONSTRUCAO" class="w-full text-xs font-mono bg-slate-100 px-3 py-1.5 border border-slate-200 rounded text-slate-700 truncate">
+                                    <button onclick="copyPixCode()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-1.5 rounded font-semibold">Copiar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-3 border-t border-slate-100 space-y-2">
+                        <button onclick="shareWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2">
+                            <i class="fa-brands fa-whatsapp text-base"></i> Enviar Link pelo WhatsApp
+                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="openReceiptModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-xs">Imprimir Recibo</button>
+                            <button onclick="simulatePaymentApproval()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-2 rounded-lg text-xs">Simular Pago</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 3: PDV BALCÃO -->
+        <section id="tab-admin-pos" class="admin-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-7 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm">Catálogo PDV Balcão</h3>
+                    <div id="pos-products-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto custom-scrollbar">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">Carrinho Balcão</h3>
+                        <div id="pos-cart-items" class="mt-3 space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar">
+                            <p class="text-xs text-slate-400 text-center py-6">Nenhum item adicionado.</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-3 space-y-2 text-xs">
+                        <div class="flex justify-between font-bold text-slate-800 text-sm">
+                            <span>Total Balcão:</span>
+                            <span id="pos-total" class="text-orange-600">R$ 0,00</span>
+                        </div>
+                        <button onclick="sendPOSToPaymentGenerator()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs">
+                            Gerar Cobrança para Este Pedido
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: ESTOQUE -->
+        <section id="tab-admin-inventory" class="admin-content hidden space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <h3 class="font-bold text-slate-800 text-sm">Controle de Estoque MCM</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                                <th class="py-2.5 px-3">Código</th>
+                                <th class="py-2.5 px-3">Produto</th>
+                                <th class="py-2.5 px-3">Categoria</th>
+                                <th class="py-2.5 px-3">Preço Un.</th>
+                                <th class="py-2.5 px-3">Estoque</th>
+                                <th class="py-2.5 px-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: HISTÓRICO -->
+        <section id="tab-admin-transactions" class="admin-content hidden space-y-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                    <h3 class="font-bold text-slate-800 text-sm">Histórico de Transações</h3>
+                    <button onclick="exportTransactionsCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-200">
+                        Exportar CSV
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                                <th class="py-2.5 px-3">Data</th>
+                                <th class="py-2.5 px-3">Cliente</th>
+                                <th class="py-2.5 px-3">Descrição</th>
+                                <th class="py-2.5 px-3">Valor</th>
+                                <th class="py-2.5 px-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <div id="receipt-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div id="printableReceipt" class="space-y-3 text-slate-800 p-2">
+                <div class="text-center border-b border-dashed border-slate-300 pb-3">
+                    <h2 class="font-black text-base uppercase">MCM MATERIAIS DE CONSTRUÇÃO</h2>
+                    <p class="text-[11px] text-slate-600">CNPJ: 32.072.531/0001-86</p>
+                    <p class="text-[11px] text-slate-600">Tel: (81) 3339-3980</p>
+                </div>
+
+                <div class="text-xs space-y-1 bg-slate-50 p-2.5 rounded border border-slate-200">
+                    <p class="flex justify-between"><strong>Comprovante Nº:</strong> <span id="rec-id">#MCM-8492</span></p>
+                    <p class="flex justify-between"><strong>Data:</strong> <span id="rec-date">02/10/2026</span></p>
+                    <p class="flex justify-between"><strong>Cliente:</strong> <span id="rec-customer">João Silva</span></p>
+                </div>
+
+                <div class="border-t border-b border-slate-200 py-2 text-xs space-y-1">
+                    <p class="font-bold">Itens do Pedido:</p>
+                    <p id="rec-desc" class="text-slate-600">10 Sacos Cimento CP II + Areia</p>
+                </div>
+
+                <div class="flex justify-between font-extrabold text-sm text-slate-900 pt-1">
+                    <span>TOTAL PAGO:</span>
+                    <span id="rec-val-total" class="text-orange-600">R$ 500,00</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="window.print()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 rounded-xl text-xs">Imprimir</button>
+                <button onclick="closeReceiptModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-4 rounded-xl text-xs">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <script>
+        let products = [
+            { id: 'PRD001', name: 'Cimento CP II 50kg Zebu', category: 'Básico', price: 34.90, stock: 140, unit: 'Saco', icon: 'fa-cubes' },
+            { id: 'PRD002', name: 'Areia Média Lavada', category: 'Básico', price: 110.00, stock: 45, unit: 'm³', icon: 'fa-mound' },
+            { id: 'PRD003', name: 'Tijolo Baiano 6 Furos 9x14x29', category: 'Básico', price: 1.20, stock: 3500, unit: 'Un', icon: 'fa-square' },
+            { id: 'PRD004', name: 'Tubo PVC 100mm Esgoto 6m Tigre', category: 'Hidráulica', price: 68.50, stock: 8, unit: 'Barra', icon: 'fa-pipe' },
+            { id: 'PRD005', name: 'Cabo Flexível 2,5mm 100m Sil', category: 'Elétrica', price: 189.00, stock: 19, unit: 'Rolo', icon: 'fa-bolt' },
+            { id: 'PRD006', name: 'Tinta Acrílica Fosca 18L Coral', category: 'Tintas', price: 299.90, stock: 12, unit: 'Lata', icon: 'fa-paint-roller' },
+            { id: 'PRD007', name: 'Argamassa AC-II 20kg Quartzolit', category: 'Básico', price: 24.50, stock: 85, unit: 'Saco', icon: 'fa-fill-drip' },
+            { id: 'PRD008', name: 'Telha Cerâmica Romana', category: 'Cobertura', price: 2.80, stock: 1200, unit: 'Un', icon: 'fa-house-chimney-window' }
+        ];
+
+        let sellers = {
+            'S01': { name: 'Carlos Silva', todaySales: 4820.00, goalPerc: 78, commission: 875.50, openQuotes: 4 },
+            'S02': { name: 'Mariana Souza', todaySales: 6200.00, goalPerc: 92, commission: 1240.00, openQuotes: 2 },
+            'S03': { name: 'Roberto Costa', todaySales: 2900.00, goalPerc: 55, commission: 480.00, openQuotes: 5 }
+        };
+
+        let activeSellerId = 'S01';
+        let sellerQuoteItems = [];
+        let sellerQuotesList = [
+            { id: 'ORC-301', customer: 'Empreiteira Lins', phone: '(81) 98765-4321', items: '50 Sacos Cimento + 5m³ Areia', total: 2295.00, status: 'Aguardando', sellerId: 'S01' },
+            { id: 'ORC-302', customer: 'Eng. Marcelo Prado', phone: '(81) 99123-8899', items: 'Rolo Cabo 2,5mm + 10 Tubos PVC', total: 874.00, status: 'Aprovado', sellerId: 'S01' },
+            { id: 'ORC-303', customer: 'Dona Maria Socorro', phone: '(81) 98844-2211', items: '2 Latas Tinta Coral 18L', total: 599.80, status: 'Aguardando', sellerId: 'S02' }
+        ];
+
+        let customerCart = [];
+        let posCart = [];
+        let transactions = [
+            { id: 'MCM-9831', customer: 'Moura Construções', desc: '50 Sacos Cimento + Areia', amount: 2150.00, status: 'Pago', date: '02/10/2026 14:20' },
+            { id: 'MCM-9830', customer: 'Carlos Eduardo', desc: 'Tubos PVC e Conexões', amount: 340.50, status: 'Pago', date: '02/10/2026 12:45' }
+        ];
+
+        let qrcodeObj = null;
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-slate-900 text-white border-slate-700';
+            let iconClass = 'fa-info-circle text-blue-400';
+
+            if (type === 'success') {
+                bgClass = 'bg-emerald-900 text-emerald-100 border-emerald-700';
+                iconClass = 'fa-circle-check text-emerald-400';
+            } else if (type === 'warning') {
+                bgClass = 'bg-amber-900 text-amber-100 border-amber-700';
+                iconClass = 'fa-triangle-exclamation text-amber-400';
+            }
+
+            toast.className = `p-3.5 rounded-xl border shadow-xl flex items-center gap-3 text-xs font-semibold pointer-events-auto animate-toast ${bgClass}`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-base"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        window.onload = function() {
+            renderStoreProducts();
+            renderPOSProducts();
+            renderInventoryTable();
+            renderHistoryTable();
+            initCharts();
+            generateInitialQRCode();
+            
+            populateSellerProductDropdown();
+            renderSellerMetrics();
+            renderSellerStockResults();
+            renderSellerQuotesTable();
+        };
+
+        function switchView(viewMode) {
+            const storeView = document.getElementById('view-store');
+            const sellerView = document.getElementById('view-seller');
+            const adminView = document.getElementById('view-admin');
+            
+            const btnStore = document.getElementById('btn-mode-store');
+            const btnSeller = document.getElementById('btn-mode-seller');
+            const btnAdmin = document.getElementById('btn-mode-admin');
+
+            storeView.classList.add('hidden');
+            sellerView.classList.add('hidden');
+            adminView.classList.add('hidden');
+
+            btnStore.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-800 whitespace-nowrap";
+            btnSeller.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-800 whitespace-nowrap";
+            btnAdmin.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-500 hover:text-slate-800 whitespace-nowrap";
+
+            if (viewMode === 'store') {
+                storeView.classList.remove('hidden');
+                btnStore.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-slate-800 shadow-sm whitespace-nowrap";
+            } else if (viewMode === 'seller') {
+                sellerView.classList.remove('hidden');
+                btnSeller.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-slate-800 shadow-sm whitespace-nowrap";
+            } else {
+                adminView.classList.remove('hidden');
+                btnAdmin.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-slate-800 shadow-sm whitespace-nowrap";
+            }
+        }
+
+        function changeActiveSeller() {
+            activeSellerId = document.getElementById('seller-select').value;
+            renderSellerMetrics();
+            renderSellerQuotesTable();
+        }
+
+        function renderSellerMetrics() {
+            const data = sellers[activeSellerId];
+            document.getElementById('seller-name-display').innerText = data.name;
+            document.getElementById('seller-kpi-today').innerText = 'R$ ' + data.todaySales.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            document.getElementById('seller-kpi-goal').innerText = data.goalPerc + '% Atingida';
+            document.getElementById('seller-goal-bar').style.width = data.goalPerc + '%';
+            document.getElementById('seller-kpi-commission').innerText = 'R$ ' + data.commission.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            document.getElementById('seller-kpi-open-quotes').innerText = data.openQuotes + ' Pedidos';
+        }
+
+        function populateSellerProductDropdown() {
+            const sel = document.getElementById('sq-product-select');
+            sel.innerHTML = '';
+            products.forEach(p => {
+                sel.innerHTML += `<option value="${p.id}">${p.name} - R$ ${p.price.toFixed(2)} (${p.stock} em estoque)</option>`;
+            });
+        }
+
+        function addSqItem() {
+            const prdId = document.getElementById('sq-product-select').value;
+            const qty = parseInt(document.getElementById('sq-product-qty').value) || 1;
+            const item = products.find(p => p.id === prdId);
+
+            if (!item) return;
+
+            const existing = sellerQuoteItems.find(i => i.id === prdId);
+            if (existing) {
+                existing.qty += qty;
+            } else {
+                sellerQuoteItems.push({ ...item, qty: qty });
+            }
+
+            renderSqTable();
+            showToast(`Item "${item.name}" adicionado ao orçamento.`, 'success');
+        }
+
+        function removeSqItem(prdId) {
+            sellerQuoteItems = sellerQuoteItems.filter(i => i.id !== prdId);
+            renderSqTable();
+        }
+
+        function calculateSqTotal() {
+            const discPerc = parseFloat(document.getElementById('sq-discount-perc').value) || 0;
+            const rawSubtotal = sellerQuoteItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            const total = rawSubtotal * (1 - (discPerc / 100));
+            document.getElementById('sq-total-display').innerText = 'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            return total;
+        }
+
+        function renderSqTable() {
+            const tbody = document.getElementById('sq-items-tbody');
+            if (sellerQuoteItems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum item adicionado ao orçamento.</td></tr>';
+                calculateSqTotal();
+                return;
+            }
+
+            tbody.innerHTML = '';
+            sellerQuoteItems.forEach(i => {
+                const itemSub = i.price * i.qty;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-2.5 font-bold text-slate-800">${i.name}</td>
+                        <td class="p-2.5 font-bold">${i.qty} ${i.unit}</td>
+                        <td class="p-2.5">R$ ${i.price.toFixed(2)}</td>
+                        <td class="p-2.5 text-right font-extrabold text-slate-900">R$ ${itemSub.toFixed(2)}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="removeSqItem('${i.id}')" class="text-rose-600 hover:text-rose-800 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            calculateSqTotal();
+        }
+
+        function saveSqQuote(actionType) {
+            const customer = document.getElementById('sq-customer-name').value;
+            const phone = document.getElementById('sq-customer-phone').value;
+
+            if (!customer || sellerQuoteItems.length === 0) {
+                showToast('Preencha o nome do cliente e adicione produtos!', 'warning');
+                return;
+            }
+
+            const total = calculateSqTotal();
+            const itemsSummary = sellerQuoteItems.map(i => `${i.qty}x ${i.name}`).join(' + ');
+            const randomCode = 'ORC-' + Math.floor(100 + Math.random() * 900);
+
+            const newQuote = {
+                id: randomCode,
+                customer: customer,
+                phone: phone || '(81) 98888-0000',
+                items: itemsSummary,
+                total: total,
+                status: 'Aguardando',
+                sellerId: activeSellerId
+            };
+
+            sellerQuotesList.unshift(newQuote);
+            renderSellerQuotesTable();
+
+            if (actionType === 'pix') {
+                switchView('admin');
+                switchAdminTab('payment-generator');
+                document.getElementById('pg-customer-name').value = customer;
+                document.getElementById('pg-customer-phone').value = phone;
+                document.getElementById('pg-description').value = itemsSummary;
+                document.getElementById('pg-value').value = total.toFixed(2);
+                calculatePGTotal();
+                showToast('Orçamento exportado para o Gerador PIX!', 'success');
+            } else {
+                showToast(`Orçamento ${randomCode} salvo com sucesso!`, 'success');
+            }
+
+            sellerQuoteItems = [];
+            renderSqTable();
+            document.getElementById('sq-customer-name').value = '';
+            document.getElementById('sq-customer-phone').value = '';
+        }
+
+        function renderSellerQuotesTable() {
+            const tbody = document.getElementById('seller-quotes-tbody');
+            const filtered = sellerQuotesList.filter(q => q.sellerId === activeSellerId);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Nenhum orçamento pendente para este vendedor.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            filtered.forEach(q => {
+                const badgeClass = q.status === 'Aprovado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${q.id}</td>
+                        <td class="py-2.5 px-3 font-bold text-slate-800">${q.customer}</td>
+                        <td class="py-2.5 px-3 text-slate-600">${q.phone}</td>
+                        <td class="py-2.5 px-3 text-slate-600 truncate max-w-xs">${q.items}</td>
+                        <td class="py-2.5 px-3 font-extrabold text-blue-700">R$ ${q.total.toFixed(2)}</td>
+                        <td class="py-2.5 px-3"><span class="${badgeClass} text-[10px] font-bold px-2 py-0.5 rounded-full">${q.status}</span></td>
+                        <td class="py-2.5 px-3 text-center">
+                            <button onclick="sendWhatsAppFollowUp('${q.customer}', '${q.phone}', '${q.items}', ${q.total})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] px-2.5 py-1 rounded-lg transition-colors inline-flex items-center gap-1">
+                                <i class="fa-brands fa-whatsapp"></i> Cobrar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function sendWhatsAppFollowUp(customer, phone, items, total) {
+            const cleanPhone = phone.replace(/\D/g, '') || '558133393980';
+            const msg = `Olá *${customer}*, aqui é do atendimento da *MCM Materiais de Construção*!\n\n` +
+                        `Passando para lembrar do seu orçamento dos seguintes itens:\n• ${items}\n\n` +
+                        `💰 *Valor Especial:* R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
+                        `Podemos gerar a chave PIX e agendar a sua entrega para hoje?`;
+
+            window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function renderSellerStockResults(query = '') {
+            const resContainer = document.getElementById('seller-stock-results');
+            resContainer.innerHTML = '';
+            
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.id.toLowerCase().includes(query.toLowerCase()));
+
+            filtered.forEach(p => {
+                const stockBadge = p.stock > 10 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800';
+                resContainer.innerHTML += `
+                    <div class="p-2 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${p.name}</p>
+                            <p class="text-[10px] text-slate-500">Cod: ${p.id} • ${p.category}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-slate-900">R$ ${p.price.toFixed(2)}</p>
+                            <span class="${stockBadge} text-[9px] font-bold px-1.5 py-0.2 rounded">${p.stock} ${p.unit}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterSellerStock() {
+            const query = document.getElementById('seller-stock-search').value;
+            renderSellerStockResults(query);
+        }
+
+        function renderStoreProducts(filterCat = 'Todos', search = '') {
+            const grid = document.getElementById('store-products-grid');
+            grid.innerHTML = '';
+
+            const filtered = products.filter(p => {
+                const matchesCat = (filterCat === 'Todos' || p.category === filterCat);
+                const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+                return matchesCat && matchesSearch;
+            });
+
+            filtered.forEach(p => {
+                grid.innerHTML += `
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-4 flex flex-col justify-between hover:shadow-lg transition-all">
+                        <div>
+                            <div class="w-full h-32 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 text-3xl mb-3">
+                                <i class="fa-solid ${p.icon || 'fa-box'}"></i>
+                            </div>
+                            <span class="text-[10px] uppercase font-bold text-orange-600 bg-orange-100/60 px-2 py-0.5 rounded">${p.category}</span>
+                            <h4 class="font-bold text-slate-800 text-xs sm:text-sm mt-1 leading-snug line-clamp-2">${p.name}</h4>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-slate-400 block">Preço Unitário</span>
+                                <span class="font-black text-slate-900 text-sm sm:text-base">R$ ${p.price.toFixed(2)}</span>
+                            </div>
+                            <button onclick="addToCustomerCart('${p.id}')" class="bg-orange-600 hover:bg-orange-700 text-white font-bold p-2.5 rounded-xl shadow-md transition-colors text-xs flex items-center gap-1.5">
+                                <i class="fa-solid fa-cart-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterStoreCategory(cat) {
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.className = "cat-pill bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors";
+            });
+            event.target.className = "cat-pill bg-slate-900 text-white text-xs font-bold px-3.5 py-2 rounded-lg whitespace-nowrap shadow-sm";
+            renderStoreProducts(cat, document.getElementById('store-search-input').value);
+        }
+
+        function filterStoreProducts() {
+            const query = document.getElementById('store-search-input').value;
+            renderStoreProducts('Todos', query);
+        }
+
+        function addToCustomerCart(id) {
+            const item = products.find(p => p.id === id);
+            if (!item) return;
+
+            const existing = customerCart.find(c => c.id === id);
+            if (existing) {
+                existing.qty++;
+            } else {
+                customerCart.push({ ...item, qty: 1 });
+            }
+            updateCartDrawer();
+            showToast(`${item.name} adicionado ao carrinho!`, 'success');
+        }
+
+        function updateCartDrawer() {
+            const badge = document.getElementById('cart-badge');
+            const itemsContainer = document.getElementById('cart-drawer-items');
+            const subtotalEl = document.getElementById('drawer-subtotal');
+            const totalEl = document.getElementById('drawer-total');
+
+            const totalItems = customerCart.reduce((sum, item) => sum + item.qty, 0);
+            badge.innerText = totalItems;
+
+            if (customerCart.length === 0) {
+                itemsContainer.innerHTML = '<p class="text-xs text-slate-400 text-center py-10">Seu carrinho está vazio.</p>';
+                subtotalEl.innerText = 'R$ 0,00';
+                totalEl.innerText = 'R$ 50,00';
+                return;
+            }
+
+            itemsContainer.innerHTML = '';
+            let subtotal = 0;
+
+            customerCart.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                itemsContainer.innerHTML += `
+                    <div class="py-2 flex items-center justify-between text-xs">
+                        <div class="flex-1 pr-2">
+                            <p class="font-bold text-slate-800">${item.name}</p>
+                            <p class="text-slate-500">R$ ${item.price.toFixed(2)} / ${item.unit}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeCustomerCartQty('${item.id}', -1)" class="w-5 h-5 bg-slate-200 rounded font-bold text-xs">-</button>
+                            <span class="font-bold text-xs w-4 text-center">${item.qty}</span>
+                            <button onclick="changeCustomerCartQty('${item.id}', 1)" class="w-5 h-5 bg-slate-200 rounded font-bold text-xs">+</button>
+                            <span class="font-bold text-slate-800 w-16 text-right">R$ ${itemTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            subtotalEl.innerText = 'R$ ' + subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            totalEl.innerText = 'R$ ' + (subtotal + 50).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+        function changeCustomerCartQty(id, delta) {
+            const item = customerCart.find(c => c.id === id);
+            if (!item) return;
+            item.qty += delta;
+            if (item.qty <= 0) {
+                customerCart = customerCart.filter(c => c.id !== id);
+            }
+            updateCartDrawer();
+        }
+
+        function toggleCartDrawer() {
+            document.getElementById('cart-drawer').classList.toggle('hidden');
+        }
+
+        function checkoutToPIX() {
+            if (customerCart.length === 0) {
+                showToast("Adicione produtos ao seu carrinho primeiro!", 'warning');
+                return;
+            }
+
+            const subtotal = customerCart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const itemsDesc = customerCart.map(i => `${i.qty}x ${i.name}`).join(' + ');
+
+            switchView('admin');
+            switchAdminTab('payment-generator');
+            toggleCartDrawer();
+
+            document.getElementById('pg-customer-name').value = "Cliente Loja Virtual";
+            document.getElementById('pg-description').value = itemsDesc;
+            document.getElementById('pg-value').value = subtotal.toFixed(2);
+            document.getElementById('pg-freight').value = "50.00";
+            calculatePGTotal();
+
+            showToast("Pedido importado para o Gerador de Pagamento PIX!", 'success');
+        }
+
+        function checkoutToWhatsApp() {
+            if (customerCart.length === 0) {
+                showToast("Adicione produtos ao seu carrinho primeiro!", 'warning');
+                return;
+            }
+
+            const itemsDesc = customerCart.map(i => `• ${i.qty}x ${i.name} (R$ ${(i.price * i.qty).toFixed(2)})`).join('\n');
+            const subtotal = customerCart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const total = (subtotal + 50).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+            const msg = `Olá *MCM Materiais de Construção*!\n\n` +
+                        `Gostaria de fechar o pedido dos seguintes itens:\n${itemsDesc}\n\n` +
+                        `🚚 *Frete estimado:* R$ 50,00\n` +
+                        `💰 *Total:* R$ ${total}\n\n` +
+                        `Favor enviar chave PIX (CNPJ 32.072.531/0001-86) para pagamento!`;
+
+            window.open(`https://api.whatsapp.com/send?phone=558133393980&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function switchAdminTab(tabId) {
+            document.querySelectorAll('.admin-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab-btn').forEach(el => {
+                el.className = "admin-tab-btn text-slate-600 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-all";
+            });
+
+            document.getElementById('tab-admin-' + tabId).classList.remove('hidden');
+            document.getElementById('nav-admin-' + tabId).className = "admin-tab-btn bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm";
+        }
+
+        function initCharts() {
+            const ctxSales = document.getElementById('salesChart').getContext('2d');
+            new Chart(ctxSales, {
+                type: 'line',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Hoje'],
+                    datasets: [{
+                        label: 'PIX',
+                        data: [8200, 9400, 11200, 8900, 14200, 12500, 14850],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Básico', 'Hidráulica', 'Tintas'],
+                    datasets: [{
+                        data: [42, 28, 30],
+                        backgroundColor: ['#f97316', '#3b82f6', '#10b981']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+            });
+        }
+
+        function calculatePGTotal() {
+            const val = parseFloat(document.getElementById('pg-value').value) || 0;
+            const freight = parseFloat(document.getElementById('pg-freight').value) || 0;
+            const discount = parseFloat(document.getElementById('pg-discount').value) || 0;
+            const total = Math.max(0, val + freight - discount);
+            document.getElementById('pg-total-display').innerText = 'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            return total;
+        }
+
+        function generateInitialQRCode() {
+            const qrContainer = document.getElementById('qrcode-canvas');
+            qrContainer.innerHTML = '';
+            qrcodeObj = new QRCode(qrContainer, {
+                text: "00020126580014BR.GOV.BCB.PIX0136320725310001865204000053039865406500.005802BR5925MCM MATERIAIS CONSTRUCAO",
+                width: 150,
+                height: 150
+            });
+        }
+
+        function generatePayment(e) {
+            e.preventDefault();
+            const customer = document.getElementById('pg-customer-name').value;
+            const desc = document.getElementById('pg-description').value;
+            const total = calculatePGTotal();
+
+            const randomTx = Math.floor(100000 + Math.random() * 900000);
+            const rawPixPayload = `00020126580014BR.GOV.BCB.PIX0136320725310001865204000053039865405${total.toFixed(2)}5802BR5925MCM MATERIAIS CONSTRUCAO62070503${randomTx}`;
+
+            document.getElementById('pix-copy-paste-input').value = rawPixPayload;
+            document.getElementById('qrcode-canvas').innerHTML = '';
+            qrcodeObj = new QRCode(document.getElementById('qrcode-canvas'), {
+                text: rawPixPayload,
+                width: 150,
+                height: 150
+            });
+
+            transactions.unshift({
+                id: 'MCM-' + randomTx,
+                customer: customer,
+                desc: desc,
+                amount: total,
+                status: 'Pendente',
+                date: new Date().toLocaleString('pt-BR')
+            });
+            renderHistoryTable();
+
+            showToast('Cobrança PIX criada com sucesso!', 'success');
+        }
+
+        function copyPixCode() {
+            const copyText = document.getElementById("pix-copy-paste-input");
+            copyText.select();
+            document.execCommand("copy");
+            showToast("PIX Copia e Cola copiado!", 'info');
+        }
+
+        function shareWhatsApp() {
+            const customer = document.getElementById('pg-customer-name').value || "Cliente";
+            const total = calculatePGTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            const pixCode = document.getElementById('pix-copy-paste-input').value;
+
+            const msg = `Olá *${customer}*, aqui é da *MCM Materiais de Construção*!\n\n` +
+                        `Segue código PIX para pagamento do seu pedido no valor de *R$ ${total}*:\n\n` +
+                        `\`${pixCode}\`\n\n` +
+                        `CNPJ: 32.072.531/0001-86\n` +
+                        `Atendimento: (81) 3339-3980.`;
+
+            window.open(`https://api.whatsapp.com/send?phone=558133393980&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function simulatePaymentApproval() {
+            document.getElementById('payment-status-badge').innerText = 'Pago ✅';
+            document.getElementById('payment-status-badge').className = 'bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full';
+            showToast('Pagamento do cliente APROVADO!', 'success');
+        }
+
+        function renderPOSProducts() {
+            const grid = document.getElementById('pos-products-grid');
+            grid.innerHTML = '';
+            products.forEach(p => {
+                grid.innerHTML += `
+                    <div onclick="addToPOSCart('${p.id}')" class="p-2.5 bg-slate-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-500 rounded-lg cursor-pointer text-xs transition-colors">
+                        <p class="font-bold text-slate-800 truncate">${p.name}</p>
+                        <p class="text-orange-600 font-extrabold mt-1">R$ ${p.price.toFixed(2)}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function addToPOSCart(id) {
+            const item = products.find(p => p.id === id);
+            const existing = posCart.find(c => c.id === id);
+            if (existing) existing.qty++;
+            else posCart.push({ ...item, qty: 1 });
+            renderPOSCart();
+        }
+
+        function renderPOSCart() {
+            const container = document.getElementById('pos-cart-items');
+            if (posCart.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">Nenhum item adicionado.</p>';
+                document.getElementById('pos-total').innerText = 'R$ 0,00';
+                return;
+            }
+            container.innerHTML = '';
+            let total = 0;
+            posCart.forEach(i => {
+                total += i.price * i.qty;
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded">
+                        <span>${i.qty}x ${i.name}</span>
+                        <span class="font-bold">R$ ${(i.price * i.qty).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('pos-total').innerText = 'R$ ' + total.toFixed(2);
+        }
+
+        function sendPOSToPaymentGenerator() {
+            if (posCart.length === 0) return showToast("Adicione itens ao carrinho primeiro!", 'warning');
+            const itemsDesc = posCart.map(i => `${i.qty}x ${i.name}`).join(' + ');
+            const subtotal = posCart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+
+            switchAdminTab('payment-generator');
+            document.getElementById('pg-description').value = itemsDesc;
+            document.getElementById('pg-value').value = subtotal.toFixed(2);
+            calculatePGTotal();
+            showToast("Carrinho Balcão enviado para Cobrança!", 'success');
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventory-tbody');
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-2.5 px-3 font-mono">${p.id}</td>
+                        <td class="py-2.5 px-3 font-bold">${p.name}</td>
+                        <td class="py-2.5 px-3">${p.category}</td>
+                        <td class="py-2.5 px-3">R$ ${p.price.toFixed(2)}</td>
+                        <td class="py-2.5 px-3 font-bold">${p.stock} ${p.unit}</td>
+                        <td class="py-2.5 px-3"><span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Normal</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = '';
+            transactions.forEach(t => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-2.5 px-3 text-slate-500">${t.date}</td>
+                        <td class="py-2.5 px-3 font-bold">${t.customer}</td>
+                        <td class="py-2.5 px-3 truncate max-w-xs">${t.desc}</td>
+                        <td class="py-2.5 px-3 font-extrabold">R$ ${t.amount.toFixed(2)}</td>
+                        <td class="py-2.5 px-3"><span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">${t.status}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openReceiptModal() {
+            document.getElementById('rec-customer').innerText = document.getElementById('pg-customer-name').value || "Cliente";
+            document.getElementById('rec-desc').innerText = document.getElementById('pg-description').value || "Materiais";
+            document.getElementById('rec-val-total').innerText = document.getElementById('pg-total-display').innerText;
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        function exportTransactionsCSV() {
+            let csv = "Codigo,Data,Cliente,Descricao,Valor,Status\n";
+            transactions.forEach(t => { csv += `${t.id},${t.date},"${t.customer}","${t.desc}",${t.amount},${t.status}\n`; });
+            const link = document.createElement("a");
+            link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+            link.download = "mcm_vendas.csv";
+            link.click();
+            showToast("Relatório CSV baixado!", 'success');
+        }
+    </script>
+</body>
+</html>
+
+```
